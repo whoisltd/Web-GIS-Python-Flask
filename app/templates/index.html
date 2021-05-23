@@ -1,0 +1,128 @@
+<html>
+
+<head>
+
+    <title>Web GIS Mỏ - Tài chính</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin="" />
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+
+
+</head>
+
+<body>
+
+    <div id="mapid" style="width: 1500px; height: 680px;"></div>
+    <script src="map/amenity_points.geojson" type="text/javascript"></script>
+    <script src="map/buildings.geojson" type="text/javascript"></script>
+    <script src="map/roads.geojson" type="text/javascript"></script>
+    <script src="map/buildings-polygon.geojson" type="text/javascript"></script>
+    <script src="map/forests-polygon.geojson" type="text/javascript"></script>
+    <script>
+
+        var mymap = L.map('mapid').setView([21.07204051307818, 105.7739627412891], 20);
+
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mymap);
+
+        var colorRoads = {
+            "color": "red"
+        }
+
+        function iconCustom(name) {
+            var HUMG = L.icon({
+                iconUrl: name,
+                iconSize: [20, 20],
+                iconAncho: [22, 94],
+                popupAncho: [-3, -76]
+            })
+            return HUMG
+        }
+        // let myLayerOptions = {
+        //     pointToLayer: createCustomIcon
+        // }
+
+        function onEachFeature(feature, layer) {
+            if (feature.properties) {
+                layer.bindPopup("<b>" + feature.properties.name + "</b><br>")
+            }
+        }
+        // L.geoJSON(addresses, {onEachFeature : onEachFeature}).addTo(mymap)
+        var points = L.geoJSON(amenity_points, {
+            onEachFeature: onEachFeature, pointToLayer: function (feature, latlng) {
+                switch (feature.properties.name) {
+                    case "LetsPro Edu., JSC": return L.marker(latlng, { icon: iconCustom("building.jpg") })
+                    case "BIDV": return L.marker(latlng, { icon: iconCustom("building.png") })
+
+                }
+            }
+        }).addTo(mymap)
+        var mystyle1 = {
+            "color": "green",
+            "fill-color": "green",
+            "weight": 5,
+            "opacity": 0.05
+        }
+        var mystyle1 = {
+            "color": "green",
+            "fill-color": "green",
+            "weight": 5,
+            "opacity": 0.05
+        }
+        var xmlhttp = new XMLHttpRequest()
+        xmlhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var HUMG = JSON.parse(this.responseText);
+                L.geoJSON(HUMG, {
+                    style: function (feature) {
+                        switch (feature.properties.loaiNha) {
+                            case "kinh doanh": return myStyle1
+                            case "bt": return myStyle2
+                        }
+                    }
+                }).addTo(mymap)
+            }
+        }
+        xmlhttp.open("GET", "http://localhost:5000/api/v1/postGIS", true)
+        xml.send();
+        // L.geoJSON(amenity_polygons).addTo(mymap)
+        var polygons = L.geoJSON(buildings, { onEachFeature: onEachFeature }).addTo(mymap)
+        var buildPolygon = L.geoJSON(buildings_polygon, { onEachFeature: onEachFeature }).addTo(mymap)
+        L.geoJSON(forests_polygon, { onEachFeature: onEachFeature }).addTo(mymap)
+        // L.geoJSON(landcover).addTo(mymap)
+        var lines = L.geoJSON(roads, { onEachFeature: onEachFeature, style: colorRoads },).addTo(mymap)
+
+        var baseLayers = {
+            "Open Street Maps": osm
+        }
+        var overlays = {
+            "Lines": lines,
+            "Polygons": polygons, buildPolygon,
+            "Points": points
+        }
+
+        L.control.layers(baseLayers, overlays).addTo(mymap)
+
+        var legend = L.control({ position: 'bottomright' })
+        legend.onAdd = function (mymap) {
+            var div = L.DomUtil.create('div', 'info')
+            div.innerHTML += '<img style="width:30px;height:30px" src="building.png">: ATM BIDV<br>'
+            div.innerHTML += '<img style="width:30px;height:30px" src="building.jpg">: LetsPro<br>'
+            return div
+        }
+        legend.addTo(mymap)
+
+    </script>
+    <!-- <button onclick="getLocation()">Where am I?</button>
+    <input type="text" id="id">
+    <input type="text" id="name"> -->
+</body>
+
+</html>
