@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 {% block body %}
-<div id="mapid" style="width: 1000px; height: 600px;"></div>
+<div id="mapid" style="width: 1050px; height: 500px;"></div>
 
 <script>
     var mymap = L.map('mapid').setView([21.07204051307818, 105.7739627412891], 20);
@@ -8,8 +8,7 @@
     var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(mymap);
-    var building
-    var tree
+
     function iconTree(feature, latlng) {
         var iconCus = L.icon({
             iconUrl: "../static/images/tree.png",
@@ -41,28 +40,31 @@
 
     //get API, add data to map
     function getAPI(link) {
+        var overlay = null;
         $.ajax({
             type: "GET",
             datatype: "JSON",
             url: link,
+            async: !1,
             success: function (response) {
                 console.log(response)
                 if (link == "api/v1/tree") {
-                    tree = L.geoJSON(response, {
+                    overlay = L.geoJSON(response, {
                         pointToLayer: iconTree, onEachFeature: treeFeature
                     }).addTo(mymap)
                 }
                 else {
-                    building = L.geoJSON(response, {
+                    overlay = L.geoJSON(response, {
                         onEachFeature: buildingFeature
                     }).addTo(mymap)
                 }
             }
         })
+        return overlay
     }
-    getAPI("/api/v1/building")
-    getAPI("api/v1/tree")
-   
+    var building = getAPI("/api/v1/building")
+    var tree = getAPI("api/v1/tree")
+    
     var baseLayers = {
         "Open Street Maps": osm
     }
@@ -72,6 +74,7 @@
     }
 
     L.control.layers(baseLayers, overlays).addTo(mymap)
+
 
     var legend = L.control({ position: 'bottomright' })
     legend.onAdd = function (mymap) {
