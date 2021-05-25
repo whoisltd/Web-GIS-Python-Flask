@@ -1,19 +1,60 @@
 from app import app
 from app.models import *
-from flask import json, render_template, request
+from flask import json, render_template, request, redirect
 from flask.json import jsonify
 from sqlalchemy import func
+from app.forms import editBuildingForm, editTreeForm
+from flask.helpers import url_for
+from flask_wtf import *
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+
+engine = create_engine("postgres://postgres:root@localhost:5432/postgis_db")
+da = scoped_session(sessionmaker(bind=engine))
+
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+
+@app.route('/tree/<int:id>', methods=['POST', 'GET'])
+def editTree(id):
+    form = editTreeForm()
+    tree = Tree.query.get(id)
+
+    if form.validate_on_submit():
+        tree.chieucao = request.form.get("chieucao")
+        tree.loaicay = request.form.get("loaicay")
+        db.session.commit()
+        return redirect(url_for('index'))
+
+    return render_template("editTree.html", tree=tree, form=form)
+
+
+@app.route('/building/<int:id>', methods=['POST', 'GET'])
+def editBuilding(id):
+    form = editBuildingForm()
+    building = Building.query.get(id)
+
+    if form.validate_on_submit():
+        building.name = form.name.data
+        building.typehouse = form.typehouse.data
+        building.floor = form.floor.data
+        building.square = form.square.data
+        building.addr_house = form.addr_house.data
+        db.session.commit()
+        return redirect(url_for('index'))
+
+    return render_template("editBuilding.html", building=building, form=form)
+
+
 @app.route('/api/v1/building')
 def building_api():
-    buildings = db.session.query(Building.id,\
-    Building.addr_house, Building.typehouse,\
-    Building.floor, Building.square,\
-    func.ST_AsGeoJSON(func.ST_Transform(Building.geom,4326)).label('geometry')).all()
+    buildings = db.session.query(Building.id,
+                                 Building.addr_house, Building.typehouse,
+                                 Building.floor, Building.square,
+                                 func.ST_AsGeoJSON(func.ST_Transform(Building.geom, 4326)).label('geometry')).all()
     buidling_feature = []
     for building in buildings:
         properties_temp = {
@@ -35,11 +76,12 @@ def building_api():
         "features": buidling_feature
     })
 
+
 @app.route('/api/v1/tree')
 def tree_api():
-    trees = db.session.query(Tree.id,\
-    Tree.loaicay, Tree.chieucao,\
-    func.ST_AsGeoJSON(func.ST_Transform(Tree.geom,4326)).label('geometry')).all()
+    trees = db.session.query(Tree.id,
+                             Tree.loaicay, Tree.chieucao,
+                             func.ST_AsGeoJSON(func.ST_Transform(Tree.geom, 4326)).label('geometry')).all()
     tree_feature = []
     for tree in trees:
         properties_temp = {
@@ -58,3 +100,28 @@ def tree_api():
     return jsonify({
         "features": tree_feature
     })
+
+
+@app.route('/output', methods=['POST'])
+def output():
+    if request.method == 'POST':
+        print(request.get_json())
+    result = []
+    data = request.get_json()
+    data["features"][0]["geometry"]["crs"] = {"type":"name","properties":{"name":"EPSG:4326"}}
+
+    print(data["features"][0]["geometry"])
+    result = json.dumps(data["features"][0]["geometry"])
+    # geom = da.execute("SELECT ST_AsText(ST_GeomFromGeoJSON('"+result+"'))")
+    # geom = db.session.query(func.ST_AsText(
+    #     func.ST_GeomFromGeoJSON(result))).first()
+    # print(geom)
+
+    tree = Tree(loaicay="cay bang", chieucao=3,
+                geom=func.ST_GeomFromGeoJSON(result))
+    # tree = db.session.query(func.ST_GeometryType(Tree.geom), func.ST_NDims(Tree.geom), func.ST_SRID(Tree.geom)).all()
+    # print(tree)
+
+    db.session.add(tree)
+    db.session.commit()
+    return data

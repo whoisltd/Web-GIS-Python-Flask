@@ -2,12 +2,12 @@
 <html lang="en">
 
 <head>
-	<title>{% block title %}
-		{% endblock %}</title>
+    <title>{% block title %}
+        {% endblock %}</title>
 </head>
 
 <body>
-	{% block head %}
+    {% block head %}
 
     <title>1st leaflet - Leaflet</title>
     <meta charset="utf-8" />
@@ -19,13 +19,16 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
         integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
         crossorigin=""></script>
-	<script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
-	<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> -->
-	
-	{% endblock head %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.js"></script>
+    <script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> -->
 
-	{% block body %}
+    {% endblock head %}
 
-	{% endblock %}
+    {% block body %}
+
+    {% endblock %}
 </body>
+
 </html>

@@ -1,10 +1,10 @@
 {% extends 'layout.html' %}
 {% block body %}
 <div id="mapid" style="width: 1050px; height: 500px;"></div>
+<button id="btn" class="oke">AddToDB</button>
 
 <script>
     var mymap = L.map('mapid').setView([21.07204051307818, 105.7739627412891], 20);
-
     var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(mymap);
@@ -20,21 +20,23 @@
     }
 
     //Feature
+
     function buildingFeature(feature, layer) {
         if (feature.properties) {
             layer.bindPopup("<b>Địa chỉ: </b>" + feature.properties.diaChi + "<br>" +
                 "<b>Loại nhà: </b>" + feature.properties.loaiNha + "<br>" +
                 "<b>Số tầng: </b>" + feature.properties.soTang + "<br>" +
                 "<b>Diện tích: </b>" + feature.properties.dienTich + "m2<br>" +
-                "<b>ID: </b>" + feature.properties.id + "<br>")
+                "<b>ID: </b>" + feature.properties.id + "<br>" +
+                '<a href="building/' + feature.properties.id + '">Edit</a>')
         }
-
     }
     function treeFeature(feature, layer) {
         if (feature.properties) {
             layer.bindPopup("<b>Loại cây: </b>" + feature.properties.loaicay + "<br>" +
                 "<b>Chiều cao: </b>" + feature.properties.chieucao + "m<br>" +
-                "<b>ID: </b>" + feature.properties.id + "<br>")
+                "<b>ID: </b>" + feature.properties.id + "<br>" +
+                '<a href="tree/' + feature.properties.id + '">Edit</a>')
         }
     }
 
@@ -64,7 +66,7 @@
     }
     var building = getAPI("/api/v1/building")
     var tree = getAPI("api/v1/tree")
-    
+
     var baseLayers = {
         "Open Street Maps": osm
     }
@@ -84,7 +86,52 @@
         return div
     }
     legend.addTo(mymap)
+    drawnItems = L.featureGroup().addTo(mymap);
+    mymap.addControl(new L.Control.Draw({
+        edit: {
+            featureGroup: drawnItems,
+            poly: {
+                allowIntersection: false
+            }
+        },
+        draw: {
+            polygon: {
+                allowIntersection: false,
+                showArea: true
+            }
+        }
+    }));
+    mymap.on('draw:created', function (event) {
+        var layer = event.layer;
 
+        layer.on('click', layerClick);
+
+        drawnItems.addLayer(layer);
+    });
+    function layerClick(e) {
+
+        console.log(geoJSON)
+    }
+    $(".oke").click(function () {
+        var geoJSON = drawnItems.toGeoJSON();
+        $.ajax({
+            url: "/output",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(geoJSON),
+            success: function (data) {/* do something */ }
+        });
+
+    });
+     // FeatureGroup is to store editable layers
+    //  var drawnItems = new L.FeatureGroup();
+    //  mymap.addLayer(drawnItems);
+    //  var drawControl = new L.Control.Draw({
+    //      edit: {
+    //          featureGroup: drawnItems
+    //      }
+    //  });
+    //  mymap.addControl(drawControl);
 </script>
 
 {% endblock body %}
