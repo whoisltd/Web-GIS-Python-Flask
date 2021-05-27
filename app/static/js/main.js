@@ -19,14 +19,13 @@ function buildingFeature(feature, layer) {
     if (feature.properties) {
         feature.layer = layer;
 
-        // layer.bindPopup("<b>Địa chỉ: </b>" + feature.properties.diaChi + "<br>" +
-        //     "<b>Loại nhà: </b>" + feature.properties.loaiNha + "<br>" +
-        //     "<b>Số tầng: </b>" + feature.properties.soTang + "<br>" +
-        //     "<b>Diện tích: </b>" + feature.properties.dienTich + "m2<br>" +
-        //     "<b>ID: </b>" + feature.properties.id + "<br>" +
-        //     '<a href="building/' + feature.properties.id + '">Edit</a>')
-        var p = layer.feature.properties;
-        p.index = p.loaiNha + " | " + p.id;
+        layer.bindPopup("<b>Địa chỉ: </b>" + feature.properties.diaChi + "<br>" +
+            "<b>Loại nhà: </b>" + feature.properties.loaiNha + "<br>" +
+            "<b>Số tầng: </b>" + feature.properties.soTang + "<br>" +
+            "<b>Diện tích: </b>" + feature.properties.dienTich + "m2<br>" +
+            "<b>ID: </b>" + feature.properties.id + "<br>" +
+            '<a href="building/' + feature.properties.id + '">Edit</a> | ' +
+            '<a href="delBuilding/' + feature.properties.id + '">Delete</a>')
     }
 }
 function treeFeature(feature, layer) {
@@ -36,7 +35,8 @@ function treeFeature(feature, layer) {
         layer.bindPopup("<b>Loại cây: </b>" + feature.properties.loaicay + "<br>" +
             "<b>Chiều cao: </b>" + feature.properties.chieucao + "m<br>" +
             "<b>ID: </b>" + feature.properties.id + "<br>" +
-            '<a href="tree/' + feature.properties.id + '">Edit</a>')
+            '<a href="tree/' + feature.properties.id + '">Edit</a> | ' +
+            '<a href="delTree/' + feature.properties.id + '">Delete</a>')
     }
 }
 var markersLayer = new L.LayerGroup();
@@ -69,7 +69,6 @@ function getAPI(link) {
                     onEachFeature: buildingFeature
                 })
                 markersLayer.addLayer(overlay)
-
                 // .addTo(map)
             }
         }

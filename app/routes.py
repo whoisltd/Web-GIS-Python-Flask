@@ -17,7 +17,7 @@ da = scoped_session(sessionmaker(bind=engine))
 def index():
     return render_template('index.html')
 
-
+#edit tree
 @app.route('/tree/<int:id>', methods=['POST', 'GET'])
 def editTree(id):
     form = editTreeForm()
@@ -31,7 +31,7 @@ def editTree(id):
 
     return render_template("editTree.html", tree=tree, form=form)
 
-
+#edit building
 @app.route('/building/<int:id>', methods=['POST', 'GET'])
 def editBuilding(id):
     form = editBuildingForm()
@@ -48,6 +48,21 @@ def editBuilding(id):
 
     return render_template("editBuilding.html", building=building, form=form)
 
+#delete tree
+@app.route("/delTree/<int:id>", methods=["POST", "GET"])
+def delTree(id):
+    tree = Tree.query.get(id)
+    db.session.delete(tree)
+    db.session.commit()
+    return redirect(url_for('index'))
+
+#delete building
+@app.route("/delBuilding/<int:id>", methods=["POST", "GET"])
+def delBuilding(id):
+    building = Building.query.get(id)
+    db.session.delete(building)
+    db.session.commit()
+    return redirect(url_for('index'))
 
 @app.route('/api/v1/building')
 def building_api():
