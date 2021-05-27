@@ -8,7 +8,7 @@ class Building(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     name = db.Column(db.String)
     addr_house = db.Column(db.String)
-    typehouse = db.Column(db.String)
+    typeHouse = db.Column(db.String)
     floor = db.Column(db.Integer)
     square = db.Column(db.Float)
     geom = db.Column(Geometry('POLYGON', srid=4326))

@@ -52,14 +52,14 @@ def editBuilding(id):
 @app.route('/api/v1/building')
 def building_api():
     buildings = db.session.query(Building.id,
-                                 Building.addr_house, Building.typehouse,
+                                 Building.addr_house, Building.typeHouse,
                                  Building.floor, Building.square,
                                  func.ST_AsGeoJSON(func.ST_Transform(Building.geom, 4326)).label('geometry')).all()
     buidling_feature = []
     for building in buildings:
         properties_temp = {
             "diaChi": building.addr_house,
-            "loaiNha": building.typehouse,
+            "loaiNha": building.typeHouse,
             "soTang": building.floor,
             "dienTich": building.square,
             "id": building.id,
@@ -106,22 +106,22 @@ def tree_api():
 def output():
     if request.method == 'POST':
         print(request.get_json())
-    result = []
     data = request.get_json()
-    data["features"][0]["geometry"]["crs"] = {"type":"name","properties":{"name":"EPSG:4326"}}
+    data["features"][0]["geometry"]["crs"] = {
+        "type": "name", "properties": {"name": "EPSG:4326"}}
 
     print(data["features"][0]["geometry"])
     result = json.dumps(data["features"][0]["geometry"])
-    # geom = da.execute("SELECT ST_AsText(ST_GeomFromGeoJSON('"+result+"'))")
-    # geom = db.session.query(func.ST_AsText(
-    #     func.ST_GeomFromGeoJSON(result))).first()
-    # print(geom)
 
-    tree = Tree(loaicay="cay bang", chieucao=3,
-                geom=func.ST_GeomFromGeoJSON(result))
+    if data["features"][0]["geometry"]["type"] == "Point":
+        tree = Tree(geom=func.ST_GeomFromGeoJSON(result))
+        db.session.add(tree)
+    else:
+        building = Building(geom=func.ST_GeomFromGeoJSON(result))
+        db.session.add(building)
+
     # tree = db.session.query(func.ST_GeometryType(Tree.geom), func.ST_NDims(Tree.geom), func.ST_SRID(Tree.geom)).all()
     # print(tree)
 
-    db.session.add(tree)
     db.session.commit()
     return data
