@@ -13,11 +13,10 @@ function iconTree(feature, latlng) {
     return L.marker(latlng, { icon: iconCus })
 }
 
-//Feature
-
+//Feature building, tree
 function buildingFeature(feature, layer) {
+    feature.layer = layer;
     if (feature.properties) {
-        feature.layer = layer;
 
         layer.bindPopup("<b>Địa chỉ: </b>" + feature.properties.diaChi + "<br>" +
             "<b>Loại nhà: </b>" + feature.properties.loaiNha + "<br>" +
@@ -31,7 +30,7 @@ function buildingFeature(feature, layer) {
 function treeFeature(feature, layer) {
     feature.layer = layer;
     if (feature.properties) {
-        
+
         layer.bindPopup("<b>Loại cây: </b>" + feature.properties.loaicay + "<br>" +
             "<b>Chiều cao: </b>" + feature.properties.chieucao + "m<br>" +
             "<b>ID: </b>" + feature.properties.id + "<br>" +
@@ -39,13 +38,26 @@ function treeFeature(feature, layer) {
             '<a href="delTree/' + feature.properties.id + '">Delete</a>')
     }
 }
+
+//Layer Group
 var markersLayer = new L.LayerGroup();
-//get API, add data to 
+
+//Search
+var searchTree = L.control.fuseSearch({
+    position: 'topleft'
+})
+searchTree.addTo(map);
+
+var searchBuilding = L.control.fuseSearch()
+searchBuilding.addTo(map);
+
+$("#btn").click(function (e) {
+
+})
 
 
-var searchCtrl = L.control.fuseSearch()
-searchCtrl.addTo(map);
-
+// 
+// Get API tree, building
 function getAPI(link) {
     var overlay = null;
     $.ajax({
@@ -56,7 +68,8 @@ function getAPI(link) {
         success: function (response) {
             console.log(response)
             if (link == "api/v1/tree") {
-                searchCtrl.indexFeatures(response.features, ['loaicay', 'chieucao', 'id']);
+
+                searchTree.indexFeatures(response.features, ['loaicay', 'chieucao', 'id']);
 
                 overlay = L.geoJSON(response, {
                     pointToLayer: iconTree, onEachFeature: treeFeature
@@ -65,6 +78,9 @@ function getAPI(link) {
                 // .addTo(map)
             }
             else {
+
+                searchBuilding.indexFeatures(response.features, ['loaiNha', 'soTang', 'diaChi']);
+
                 overlay = L.geoJSON(response, {
                     onEachFeature: buildingFeature
                 })
@@ -75,10 +91,15 @@ function getAPI(link) {
     })
     return overlay
 }
+//layer tree, building
 var building = getAPI("/api/v1/building")
 var tree = getAPI("api/v1/tree")
+
 console.log(tree)
+//add layer to map
 map.addLayer(markersLayer)
+
+// Control layers
 var baseLayers = {
     "Open Street Maps": osm
 }
@@ -89,16 +110,17 @@ var overlays = {
 
 L.control.layers(baseLayers, overlays).addTo(map)
 
-
+//map legend
 var legend = L.control({ position: 'bottomright' })
 legend.onAdd = function (map) {
     var div = L.DomUtil.create('div', 'info')
-    div.innerHTML += '<img style="width:30px;height:30px" src="{{ url_for("static", filename="images/building.png") }}">: Building<br>'
-    div.innerHTML += '<img style="width:30px;height:30px" src="{{ url_for("static", filename="images/tree.png") }}">: Tree<br>'
+    div.innerHTML += '<img style="width:30px;height:30px" src="static/images/building.png">: Building<br>'
+    div.innerHTML += '<img style="width:30px;height:30px" src="static/images/tree.png">: Tree<br>'
     return div
 }
 legend.addTo(map)
 
+//draw Item
 drawnItems = L.featureGroup().addTo(map);
 map.addControl(new L.Control.Draw({
     edit: {
@@ -114,47 +136,20 @@ map.addControl(new L.Control.Draw({
         }
     }
 }));
+
 map.on('draw:created', function (event) {
     var layer = event.layer;
-
-    layer.on('click', layerClick);
-
+    // layer.on('click', layerClick);
     drawnItems.addLayer(layer);
-
-
-});
-function layerClick(e) {
-
     var geoJSON = drawnItems.toGeoJSON();
+
     $.ajax({
-        url: "/output",
+        url: "/createNewItem",
         type: "POST",
         contentType: "application/json",
         data: JSON.stringify(geoJSON),
-        success: function (data) {/* do something */ }
+        success: function (data) { }
     });
-}
-
-// L.geoJson(data, {
-//     onEachFeature: function (feature, layer) {
-//         feature.layer = layer;
-//     }
-// });
-// function onEach(feature, layer) {
-//     var p = layer.feature.properties;
-//     p.index = p.Name + " | " + p.ID;
+});
+// function layerClick(e) {
 // }
-// L.control.search({
-//     layer: markersLayer,
-//     initial: true,
-//     propertyName: 'id',
-//     propertyName: 'loaicay',
-//     buildTip: function (text, val) {
-//         var type = val.layer.feature.properties.loaicay;
-//         // var p = layer.feature.properties;
-//         // p.index = p.loaiNha + " | " + p.id;
-//         return '<a href="#" class="">' + text + ': <b>' + type + '</b></a>';
-//     },
-// }).addTo(map);
-
-

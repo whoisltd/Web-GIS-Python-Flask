@@ -1,233 +1,355 @@
+
+// From http://www.tutorialspoint.com/javascript/array_map.htm
 if (!Array.prototype.map) {
-    Array.prototype.map = function(b) {
-        var a = this.length;
-        if (typeof b !== "function") {
-            throw new TypeError()
+    Array.prototype.map = function (fun /*, thisp*/) {
+        var len = this.length;
+        if (typeof fun !== "function")
+            throw new TypeError();
+
+        var res = new Array(len);
+        var thisp = arguments[1];
+        for (var i = 0; i < len; i++) {
+            if (i in this)
+                res[i] = fun.call(thisp, this[i], i, this);
         }
-        var e = new Array(a);
-        var d = arguments[1];
-        for (var c = 0; c < a; c++) {
-            if (c in this) {
-                e[c] = b.call(d, this[c], c, this)
-            }
-        }
-        return e
-    }
+
+        return res;
+    };
 }
+
 L.Control.FuseSearch = L.Control.extend({
-    includes: L.Mixin.Events,
+
+    includes: L.Evented.prototype,
+
     options: {
-        position: "topright",
-        title: "Search",
-        placeholder: "Search",
+        position: 'topright',
+        title: 'Search',
+        panelTitle: '',
+        placeholder: 'Search',
         caseSensitive: false,
         threshold: 0.5,
         maxResultLength: null,
         showResultFct: null,
         showInvisibleFeatures: true
     },
-    initialize: function(a) {
-        L.setOptions(this, a);
-        this._panelOnLeftSide = (this.options.position.indexOf("left") !== -1)
+
+    initialize: function (options) {
+        L.setOptions(this, options);
+        this._panelOnLeftSide = (this.options.position.indexOf("left") !== -1);
     },
-    onAdd: function(b) {
-        var a = this._createControl();
-        this._createPanel(b);
+
+    onAdd: function (map) {
+
+        var ctrl = this._createControl();
+        this._createPanel(map);
         this._setEventListeners();
-        b.invalidateSize();
-        return a
+        map.invalidateSize();
+
+        return ctrl;
     },
-    onRemove: function(a) {
-        this.hidePanel(a);
+
+    onRemove: function (map) {
+
+        this.hidePanel(map);
         this._clearEventListeners();
-        this._clearPanel(a);
+        this._clearPanel(map);
         this._clearControl();
-        return this
+
+        return this;
     },
-    _createControl: function() {
-        var d = "leaflet-fusesearch-control"
-          , a = L.DomUtil.create("div", d);
-        var b = this._openButton = L.DomUtil.create("a", "button", a);
-        b.href = "#";
-        b.title = this.options.title;
-        var c = L.DomEvent.stopPropagation;
-        L.DomEvent.on(b, "click", c).on(b, "mousedown", c).on(b, "touchstart", c).on(b, "mousewheel", c).on(b, "MozMousePixelScroll", c);
-        L.DomEvent.on(b, "click", L.DomEvent.preventDefault);
-        L.DomEvent.on(b, "click", this.showPanel, this);
-        return a
+
+    _createControl: function () {
+
+        var className = 'leaflet-fusesearch-control',
+            container = L.DomUtil.create('div', className);
+
+        // Control to open the search panel
+        var butt = this._openButton = L.DomUtil.create('a', 'button', container);
+        butt.href = '#';
+        butt.title = this.options.title;
+        var stop = L.DomEvent.stopPropagation;
+        L.DomEvent.on(butt, 'click', stop)
+            .on(butt, 'mousedown', stop)
+            .on(butt, 'touchstart', stop)
+            .on(butt, 'mousewheel', stop)
+            .on(butt, 'MozMousePixelScroll', stop);
+        L.DomEvent.on(butt, 'click', L.DomEvent.preventDefault);
+        L.DomEvent.on(butt, 'click', this.showPanel, this);
+
+        return container;
     },
-    _clearControl: function() {
-        var a = this._openButton;
-        var b = L.DomEvent.stopPropagation;
-        L.DomEvent.off(a, "click", b).off(a, "mousedown", b).off(a, "touchstart", b).off(a, "mousewheel", b).off(a, "MozMousePixelScroll", b);
-        L.DomEvent.off(a, "click", L.DomEvent.preventDefault);
-        L.DomEvent.off(a, "click", this.showPanel)
+
+    _clearControl: function () {
+        // Unregister events to prevent memory leak
+        var butt = this._openButton;
+        var stop = L.DomEvent.stopPropagation;
+        L.DomEvent.off(butt, 'click', stop)
+            .off(butt, 'mousedown', stop)
+            .off(butt, 'touchstart', stop)
+            .off(butt, 'mousewheel', stop)
+            .off(butt, 'MozMousePixelScroll', stop);
+        L.DomEvent.off(butt, 'click', L.DomEvent.preventDefault);
+        L.DomEvent.off(butt, 'click', this.showPanel);
     },
-    _createPanel: function(e) {
-        var h = this;
-        var d = e.getContainer();
-        var c = "leaflet-fusesearch-panel"
-          , g = this._panel = L.DomUtil.create("div", c, d);
-        var b = L.DomEvent.stopPropagation;
-        L.DomEvent.on(g, "click", b).on(g, "dblclick", b).on(g, "mousedown", b).on(g, "touchstart", b).on(g, "mousewheel", b).on(g, "MozMousePixelScroll", b);
+
+    _createPanel: function (map) {
+        var _this = this;
+
+        // Create the search panel
+        var mapContainer = map.getContainer();
+        var className = 'leaflet-fusesearch-panel',
+            pane = this._panel = L.DomUtil.create('div', className, mapContainer);
+
+        // Make sure we don't drag the map when we interact with the content
+        var stop = L.DomEvent.stopPropagation;
+        L.DomEvent.on(pane, 'click', stop)
+            .on(pane, 'dblclick', stop)
+            .on(pane, 'mousedown', stop)
+            .on(pane, 'touchstart', stop)
+            .on(pane, 'mousewheel', stop)
+            .on(pane, 'MozMousePixelScroll', stop);
+
+        // place the pane on the same side as the control
         if (this._panelOnLeftSide) {
-            L.DomUtil.addClass(g, "left")
+            L.DomUtil.addClass(pane, 'left');
         } else {
-            L.DomUtil.addClass(g, "right")
+            L.DomUtil.addClass(pane, 'right');
         }
-        var a = L.DomUtil.create("div", "content", g);
-        L.DomUtil.create("img", "search-image", a);
-        this._input = L.DomUtil.create("input", "search-input", a);
-        this._input.maxLength = 30;
-        this._input.placeholder = this.options.placeholder;
-        this._input.onkeyup = function(i) {
-            var j = i.currentTarget.value;
-            h.searchFeatures(j)
+
+        // Intermediate container to get the box sizing right
+        var container = null
+        if ($('.content').hasClass('content') != true) {
+            container = L.DomUtil.create('div', 'content', pane);
         }
-        ;
-        var f = this._closeButton = L.DomUtil.create("a", "close", a);
-        f.innerHTML = "&times;";
-        L.DomEvent.on(f, "click", this.hidePanel, this);
-        this._resultList = L.DomUtil.create("div", "result-list", a);
-        return g
+
+        var header = L.DomUtil.create('div', 'header', container);
+        if (this.options.panelTitle) {
+            var title = L.DomUtil.create('p', 'panel-title', header);
+            title.innerHTML = this.options.panelTitle;
+        }
+
+        // Search image and input field
+        L.DomUtil.create('img', 'search-image', header);
+        if ($('.search-input').hasClass('search-input') == true) {
+            $('.search-input').keydown(function (e) {
+                var searchString = e.currentTarget.value;
+                _this.searchFeatures(searchString,1);
+            })
+
+        }
+        else {
+            this._input = L.DomUtil.create('input', 'search-input', header);
+            this._input.maxLength = 30;
+            this._input.placeholder = this.options.placeholder;
+            this._input.onkeyup = function (evt) {
+                var searchString = evt.currentTarget.value;
+                _this.searchFeatures(searchString, 0);
+            }
+        };
+
+        // Close button
+        var close = this._closeButton = L.DomUtil.create('a', 'close', header);
+        close.innerHTML = '&times;';
+        L.DomEvent.on(close, 'click', this.hidePanel, this);
+
+        // Where the result will be listed
+        if ($('.result-list').hasClass('result-list') != true) {
+            this._resultList = L.DomUtil.create('div', 'result-list', container);
+        }
+
+        return pane;
     },
-    _clearPanel: function(c) {
-        var a = L.DomEvent.stopPropagation;
-        L.DomEvent.off(this._panel, "click", a).off(this._panel, "dblclick", a).off(this._panel, "mousedown", a).off(this._panel, "touchstart", a).off(this._panel, "mousewheel", a).off(this._panel, "MozMousePixelScroll", a);
-        L.DomEvent.off(this._closeButton, "click", this.hidePanel);
-        var b = c.getContainer();
-        b.removeChild(this._panel);
-        this._panel = null
+
+    _clearPanel: function (map) {
+
+        // Unregister event handlers
+        var stop = L.DomEvent.stopPropagation;
+        L.DomEvent.off(this._panel, 'click', stop)
+            .off(this._panel, 'dblclick', stop)
+            .off(this._panel, 'mousedown', stop)
+            .off(this._panel, 'touchstart', stop)
+            .off(this._panel, 'mousewheel', stop)
+            .off(this._panel, 'MozMousePixelScroll', stop);
+
+        L.DomEvent.off(this._closeButton, 'click', this.hidePanel);
+
+        var mapContainer = map.getContainer();
+        mapContainer.removeChild(this._panel);
+
+        this._panel = null;
     },
-    _setEventListeners: function() {
-        var b = this;
-        var a = this._input;
-        this._map.addEventListener("overlayadd", function() {
-            b.searchFeatures(a.value)
+
+    _setEventListeners: function () {
+        var that = this;
+        var input = this._input;
+        this._map.addEventListener('overlayadd', function () {
+            that.searchFeatures(input.value);
         });
-        this._map.addEventListener("overlayremove", function() {
-            b.searchFeatures(a.value)
-        })
+        this._map.addEventListener('overlayremove', function () {
+            that.searchFeatures(input.value);
+        });
     },
-    _clearEventListeners: function() {
-        this._map.removeEventListener("overlayadd");
-        this._map.removeEventListener("overlayremove")
+
+    _clearEventListeners: function () {
+        this._map.removeEventListener('overlayadd');
+        this._map.removeEventListener('overlayremove');
     },
-    isPanelVisible: function() {
-        return L.DomUtil.hasClass(this._panel, "visible")
+
+    isPanelVisible: function () {
+        return L.DomUtil.hasClass(this._panel, 'visible');
     },
-    showPanel: function() {
+
+    showPanel: function () {
         if (!this.isPanelVisible()) {
-            L.DomUtil.addClass(this._panel, "visible");
-            this._map.panBy([this.getOffset() * 0.5, 0], {
-                duration: 0.5
-            });
-            this.fire("show");
+            L.DomUtil.addClass(this._panel, 'visible');
+            // Preserve map centre
+            this._map.panBy([this.getOffset() * 0.5, 0], { duration: 0.5 });
+            this.fire('show');
             this._input.select();
-            this.searchFeatures(this._input.value)
+            // Search again as visibility of features might have changed
+            this.searchFeatures(this._input.value);
         }
     },
-    hidePanel: function(a) {
+
+    hidePanel: function (e) {
         if (this.isPanelVisible()) {
-            L.DomUtil.removeClass(this._panel, "visible");
+            L.DomUtil.removeClass(this._panel, 'visible');
+            // Move back the map centre - only if we still hold this._map
+            // as this might already have been cleared up by removeFrom()
             if (null !== this._map) {
-                this._map.panBy([this.getOffset() * -0.5, 0], {
-                    duration: 0.5
-                })
-            }
-            this.fire("hide");
-            if (a) {
-                L.DomEvent.stopPropagation(a)
+                this._map.panBy([this.getOffset() * -0.5, 0], { duration: 0.5 });
+            };
+            this.fire('hide');
+            if (e) {
+                L.DomEvent.stopPropagation(e);
             }
         }
     },
-    getOffset: function() {
+
+    getOffset: function () {
         if (this._panelOnLeftSide) {
-            return -this._panel.offsetWidth
+            return - this._panel.offsetWidth;
         } else {
-            return this._panel.offsetWidth
+            return this._panel.offsetWidth;
         }
     },
-    indexFeatures: function(d, c) {
-        this._keys = c;
-        var b = d.map(function(e) {
-            e.properties._feature = e;
-            return e.properties
+
+    indexFeatures: function (data, keys) {
+
+        var jsonFeatures = data.features || data;
+
+        this._keys = keys;
+        var properties = jsonFeatures.map(function (feature) {
+            // Keep track of the original feature
+            feature.properties._feature = feature;
+            return feature.properties;
         });
-        var a = {
-            keys: c,
+
+        var options = {
+            keys: keys,
             caseSensitive: this.options.caseSensitive,
             threshold: this.options.threshold
         };
-        this._fuseIndex = new Fuse(b,a)
+
+        this._fuseIndex = new Fuse(properties, options);
     },
-    searchFeatures: function(e) {
-        var j = this._fuseIndex.search(e);
-        $(".result-item").remove();
-        var b = $(".result-list")[0];
-        var d = 0;
-        var g = this.options.maxResultLength;
-        for (var c in j) {
-            var f = j[c];
-            var h = f.item._feature;
-            var a = this._getFeaturePopupIfVisible(h);
-            if (undefined !== a || this.options.showInvisibleFeatures) {
-                this.createResultItem(f, b, a);
-                if (undefined !== g && ++d === g) {
-                    break
-                }
+
+    searchFeatures: function (string, int) {
+
+        var result = this._fuseIndex.search(string);
+
+        // Empty result list
+        var listItems = document.querySelectorAll(".result-item");
+        if (int == 1) {
+            for (var i = 0; i < listItems.length; i++) {
+                listItems[i].remove();
+            }
+        }
+
+        var resultList = document.querySelector('.result-list');
+        var num = 0;
+        var max = this.options.maxResultLength;
+        for (var i in result) {
+            var props = result[i];
+            var feature = props.item._feature;
+            var popup = this._getFeaturePopupIfVisible(feature);
+
+            if (undefined !== popup || this.options.showInvisibleFeatures) {
+                this.createResultItem(props, resultList, popup);
+                if (undefined !== max && ++num === max)
+                    break;
             }
         }
     },
-    _getFeaturePopupIfVisible: function(b) {
-        var a = b.layer;
-        if (undefined !== a && this._map.hasLayer(a)) {
-            return a.getPopup()
+
+    refresh: function () {
+        // Reapply the search on the indexed features - useful if features have been filtered out
+        if (this.isPanelVisible()) {
+            this.searchFeatures(this._input.value);
         }
     },
-    createResultItem: function(f, b, a) {
-        var g = this;
-        var e = f.item._feature;
-        var c = L.DomUtil.create("p", "result-item", b);
-        if (undefined !== a) {
-            L.DomUtil.addClass(c, "clickable");
-            c.onclick = function() {
+
+    _getFeaturePopupIfVisible: function (feature) {
+        var layer = feature.layer;
+        if (undefined !== layer && this._map.hasLayer(layer)) {
+            return layer.getPopup();
+        }
+    },
+
+    createResultItem: function (props, container, popup) {
+
+        var _this = this;
+        var feature = props.item._feature;
+
+        // Create a container and open the associated popup on click
+        var resultItem = L.DomUtil.create('p', 'result-item', container);
+
+        if (undefined !== popup) {
+            L.DomUtil.addClass(resultItem, 'clickable');
+            resultItem.onclick = function () {
+
                 if (window.matchMedia("(max-width:480px)").matches) {
-                    g.hidePanel();
-                    e.layer.openPopup()
+                    _this.hidePanel();
+                    feature.layer.openPopup();
                 } else {
-                    g._panAndPopup(e, a)
+                    _this._panAndPopup(feature, popup);
                 }
-            }
+            };
         }
+
+        // Fill in the container with the user-supplied function if any,
+        // otherwise display the feature properties used for the search.
         if (null !== this.options.showResultFct) {
-            this.options.showResultFct(e, c)
+            this.options.showResultFct(feature, resultItem);
         } else {
-            str = "<b>" + f.item[this._keys[0]] + "</b>";
-            for (var d = 1; d < this._keys.length; d++) {
-                str += "<br/>" + f.item[this._keys[d]]
+            str = '<b>' + props.item[this._keys[0]] + '</b>';
+            for (var i = 1; i < this._keys.length; i++) {
+                str += '<br/>' + props.item[this._keys[i]];
             }
-            c.innerHTML = str
-        }
-        return c
+            resultItem.innerHTML = str;
+        };
+
+        return resultItem;
     },
-    _panAndPopup: function(c, a) {
+
+    _panAndPopup: function (feature, popup) {
+        // Temporarily adapt the map padding so that the popup is not hidden by the search pane
         if (this._panelOnLeftSide) {
-            var d = a.options.autoPanPaddingTopLeft;
-            var b = new L.Point(-this.getOffset(),10);
-            a.options.autoPanPaddingTopLeft = b;
-            c.layer.openPopup();
-            a.options.autoPanPaddingTopLeft = d
+            var oldPadding = popup.options.autoPanPaddingTopLeft;
+            var newPadding = new L.Point(- this.getOffset(), 10);
+            popup.options.autoPanPaddingTopLeft = newPadding;
+            feature.layer.openPopup();
+            popup.options.autoPanPaddingTopLeft = oldPadding;
         } else {
-            var d = a.options.autoPanPaddingBottomRight;
-            var b = new L.Point(this.getOffset(),10);
-            a.options.autoPanPaddingBottomRight = b;
-            c.layer.openPopup();
-            a.options.autoPanPaddingBottomRight = d
+            var oldPadding = popup.options.autoPanPaddingBottomRight;
+            var newPadding = new L.Point(this.getOffset(), 10);
+            popup.options.autoPanPaddingBottomRight = newPadding;
+            feature.layer.openPopup();
+            popup.options.autoPanPaddingBottomRight = oldPadding;
         }
     }
 });
-L.control.fuseSearch = function(a) {
-    return new L.Control.FuseSearch(a)
-}
-;
+
+L.control.fuseSearch = function (options) {
+    return new L.Control.FuseSearch(options);
+};

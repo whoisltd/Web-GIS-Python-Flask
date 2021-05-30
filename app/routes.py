@@ -117,15 +117,15 @@ def tree_api():
     })
 
 
-@app.route('/output', methods=['POST'])
-def output():
-    if request.method == 'POST':
-        print(request.get_json())
+@app.route('/createNewItem', methods=['POST'])
+def createNewItem():
+    print(request.get_json())
     data = request.get_json()
     data["features"][0]["geometry"]["crs"] = {
         "type": "name", "properties": {"name": "EPSG:4326"}}
 
     print(data["features"][0]["geometry"])
+
     result = json.dumps(data["features"][0]["geometry"])
 
     if data["features"][0]["geometry"]["type"] == "Point":
@@ -135,8 +135,5 @@ def output():
         building = Building(geom=func.ST_GeomFromGeoJSON(result))
         db.session.add(building)
 
-    # tree = db.session.query(func.ST_GeometryType(Tree.geom), func.ST_NDims(Tree.geom), func.ST_SRID(Tree.geom)).all()
-    # print(tree)
-
     db.session.commit()
-    return data
+    return redirect(url_for('index'))
