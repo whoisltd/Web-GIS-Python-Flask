@@ -64,18 +64,19 @@ L.Control.FuseSearch = L.Control.extend({
             container = L.DomUtil.create('div', className);
 
         // Control to open the search panel
-        var butt = this._openButton = L.DomUtil.create('a', 'button', container);
-        butt.href = '#';
-        butt.title = this.options.title;
-        var stop = L.DomEvent.stopPropagation;
-        L.DomEvent.on(butt, 'click', stop)
-            .on(butt, 'mousedown', stop)
-            .on(butt, 'touchstart', stop)
-            .on(butt, 'mousewheel', stop)
-            .on(butt, 'MozMousePixelScroll', stop);
-        L.DomEvent.on(butt, 'click', L.DomEvent.preventDefault);
-        L.DomEvent.on(butt, 'click', this.showPanel, this);
-
+        if ($('.button').hasClass('button') != true) {
+            var butt = this._openButton = L.DomUtil.create('a', 'button', container);
+            butt.href = '#';
+            butt.title = this.options.title;
+            var stop = L.DomEvent.stopPropagation;
+            L.DomEvent.on(butt, 'click', stop)
+                .on(butt, 'mousedown', stop)
+                .on(butt, 'touchstart', stop)
+                .on(butt, 'mousewheel', stop)
+                .on(butt, 'MozMousePixelScroll', stop);
+            L.DomEvent.on(butt, 'click', L.DomEvent.preventDefault);
+            L.DomEvent.on(butt, 'click', this.showPanel, this);
+        }
         return container;
     },
 
